@@ -57,7 +57,7 @@ def find_text_region(
     top,
     right,
     bottom,
-    font_path="./fonts/arialbd.ttf",
+    font_path="./fonts/arial.ttf",
     font_size=20,
     aspect_ratio_threshold=0.1,
 ):

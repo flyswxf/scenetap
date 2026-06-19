@@ -1,3 +1,7 @@
+import json
+import re
+from types import SimpleNamespace
+
 from openai import OpenAI
 
 
@@ -12,7 +16,9 @@ class Message:
         """
         self.messages.append({"role": "system", "content": instruction})
 
-    def add_user_message(self, text=None, base64_images=None, detail="auto", image_first=False):
+    def add_user_message(
+        self, text=None, base64_images=None, detail="auto", image_first=False
+    ):
         """
         Add a user message, which can include both text and multiple images. The images can appear before or after the text.
 
@@ -27,47 +33,41 @@ class Message:
         # Append images first if image_first is True
         if base64_images and image_first:
             for i, base64_image in enumerate(base64_images):
-                content_list.append({
-                    "type": "text",
-                    "text": f"Image {i}"
-                })
-                content_list.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}",
-                        "detail": detail
+                content_list.append({"type": "text", "text": f"Image {i}"})
+                content_list.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                            "detail": detail,
+                        },
                     }
-                })
+                )
 
         # Append text
         if text:
-            content_list.append({
-                "type": "text",
-                "text": text
-            })
+            content_list.append({"type": "text", "text": text})
 
         # Append images after text if image_first is False
         if base64_images and not image_first:
             for i, base64_image in enumerate(base64_images):
-                content_list.append({
-                    "type": "text",
-                    "text": f"Image {i}"
-                })
-                content_list.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}",
-                        "detail": detail
+                content_list.append({"type": "text", "text": f"Image {i}"})
+                content_list.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                            "detail": detail,
+                        },
                     }
-                })
+                )
 
         if content_list:
-            self.messages.append({
-                "role": "user",
-                "content": content_list
-            })
+            self.messages.append({"role": "user", "content": content_list})
 
-    def add_user_message_test(self, text=None, base64_images=None, detail="auto", image_first=False):
+    def add_user_message_test(
+        self, text=None, base64_images=None, detail="auto", image_first=False
+    ):
         """
         Add a user message, which can include both text and multiple images. The images can appear before or after the text.
 
@@ -82,46 +82,41 @@ class Message:
         # Append images first if image_first is True
         if base64_images and image_first:
             for i, base64_image in enumerate(base64_images):
-                content_list.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}",
-                        "detail": detail
+                content_list.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                            "detail": detail,
+                        },
                     }
-                })
+                )
 
         # Append text
         if text:
-            content_list.append({
-                "type": "text",
-                "text": text
-            })
+            content_list.append({"type": "text", "text": text})
 
         # Append images after text if image_first is False
         if base64_images and not image_first:
             for i, base64_image in enumerate(base64_images):
-                content_list.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}",
-                        "detail": detail
+                content_list.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                            "detail": detail,
+                        },
                     }
-                })
+                )
 
         if content_list:
-            self.messages.append({
-                "role": "user",
-                "content": content_list
-            })
+            self.messages.append({"role": "user", "content": content_list})
 
     def add_assistant_message(self, text):
         """
         Add an assistant message with the given text.
         """
-        self.messages.append({
-            "role": "assistant",
-            "content": text
-        })
+        self.messages.append({"role": "assistant", "content": text})
 
     def get_messages(self):
         """
@@ -131,7 +126,16 @@ class Message:
 
 
 class CompletionRequest:
-    def __init__(self, model, temperature=0.5, max_tokens=4095, top_p=0.5, response_format=None):
+    def __init__(
+        self,
+        model,
+        temperature=0.5,
+        max_tokens=4095,
+        top_p=0.5,
+        response_format=None,
+        api_key=None,
+        base_url=None,
+    ):
         """
         Initialize the completion request with model parameters.
 
@@ -142,7 +146,12 @@ class CompletionRequest:
         - top_p: Nucleus sampling parameter (default: 0.5).
         - response_format: Expected response format (default: "Plan").
         """
-        self.client = OpenAI()
+        client_kwargs = {}
+        if api_key is not None:
+            client_kwargs["api_key"] = api_key
+        if base_url is not None:
+            client_kwargs["base_url"] = base_url
+        self.client = OpenAI(**client_kwargs)
 
         self.model = model
         self.temperature = temperature
@@ -153,6 +162,59 @@ class CompletionRequest:
         else:
             self.response_format = response_format
         self.message_handler = Message()
+
+    @staticmethod
+    def _extract_json_object(text):
+        if text is None:
+            raise ValueError("Model returned empty content.")
+
+        text = text.strip()
+        fenced_match = re.search(r"```(?:json)?\s*(\{[\s\S]*\})\s*```", text)
+        if fenced_match:
+            return fenced_match.group(1)
+
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end < start:
+            raise ValueError(f"Unable to extract JSON object from response: {text}")
+        return text[start : end + 1]
+
+    def _build_wrapped_response(self, parsed, raw_content):
+        return SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        parsed=parsed,
+                        content=raw_content,
+                    )
+                )
+            ]
+        )
+
+    def _json_schema_fallback(self):
+        schema = self.response_format.model_json_schema()
+        fallback_messages = list(self.message_handler.get_messages())
+        fallback_messages.append(
+            {
+                "role": "system",
+                "content": (
+                    "Return ONLY one valid JSON object. Do not add markdown fences or extra text. "
+                    f"The JSON object must satisfy this schema: {json.dumps(schema, ensure_ascii=True)}"
+                ),
+            }
+        )
+        completion = self.client.chat.completions.create(
+            model=self.model,
+            messages=fallback_messages,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            top_p=self.top_p,
+            response_format={"type": "json_object"},
+        )
+        raw_content = completion.choices[0].message.content
+        json_content = self._extract_json_object(raw_content)
+        parsed = self.response_format.model_validate_json(json_content)
+        return self._build_wrapped_response(parsed, raw_content)
 
     def set_response_format(self, response_format):
         """
@@ -166,17 +228,23 @@ class CompletionRequest:
         """
         self.message_handler.add_system_message(instruction)
 
-    def add_user_message(self, text=None, base64_image=None, detail="auto", image_first=False):
+    def add_user_message(
+        self, text=None, base64_image=None, detail="auto", image_first=False
+    ):
         """
         Add a user message to the completion request.
         """
         self.message_handler.add_user_message(text, base64_image, detail, image_first)
 
-    def add_user_message_test(self, text=None, base64_image=None, detail="auto", image_first=False):
+    def add_user_message_test(
+        self, text=None, base64_image=None, detail="auto", image_first=False
+    ):
         """
         Add a user message to the completion request.
         """
-        self.message_handler.add_user_message_test(text, base64_image, detail, image_first)
+        self.message_handler.add_user_message_test(
+            text, base64_image, detail, image_first
+        )
 
     def add_assistant_message(self, text):
         """
@@ -197,11 +265,16 @@ class CompletionRequest:
                 top_p=self.top_p,
             )
         else:
-            return self.client.beta.chat.completions.parse(
-                model=self.model,
-                messages=self.message_handler.get_messages(),
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-                top_p=self.top_p,
-                response_format=self.response_format,
-            )
+            try:
+                return self.client.beta.chat.completions.parse(
+                    model=self.model,
+                    messages=self.message_handler.get_messages(),
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                    top_p=self.top_p,
+                    response_format=self.response_format,
+                )
+            except Exception:
+                # Some OpenAI-compatible endpoints do not implement `parse`,
+                # but can still return JSON compatible with the same schema.
+                return self._json_schema_fallback()

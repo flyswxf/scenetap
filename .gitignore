@@ -49,3 +49,12 @@ venv.bak/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+.trae
+
+# 权重文件
+clip-vit-base-patch32
+
+# 数据集文件
+som_images
+tables

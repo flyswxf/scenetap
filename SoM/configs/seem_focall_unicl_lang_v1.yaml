@@ -8,13 +8,13 @@
 # Define Test/Trainer/Saving
 PIPELINE: XDecoderPipeline
 TRAINER: xdecoder
-SAVE_DIR: '../../data/output/test'
+SAVE_DIR: "../../data/output/test"
 base_path: "./"
 
 # Resume Logistic
 RESUME: false
 WEIGHT: false
-RESUME_FROM: ''
+RESUME_FROM: ""
 EVAL_AT_START: False
 
 # Logging and Debug
@@ -24,12 +24,12 @@ FIND_UNUSED_PARAMETERS: false
 
 # Speed up training
 FP16: false
-PORT: '36873'
+PORT: "36873"
 
 # misc
 LOADER:
   JOINT: False
-  KEY_DATASET: 'coco'
+  KEY_DATASET: "coco"
 
 ##################
 # Task settings
@@ -46,6 +46,7 @@ MODEL:
     ARCH: vlpencoder
     NAME: transformer
     TOKENIZER: clip
+    PRETRAINED_TOKENIZER: "./clip-vit-base-patch32"
     CONTEXT_LENGTH: 77 # 77
     WIDTH: 512
     HEADS: 8
@@ -53,7 +54,7 @@ MODEL:
     AUTOGRESSIVE: True
   BACKBONE:
     NAME: focal
-    PRETRAINED: ''
+    PRETRAINED: ""
     LOAD_PRETRAINED: false
     FOCAL:
       PRETRAIN_IMG_SIZE: 224
@@ -149,7 +150,7 @@ MODEL:
     TRAIN_NUM_POINTS: 12544
     OVERSAMPLE_RATIO: 3.0
     IMPORTANCE_SAMPLE_RATIO: 0.75
-    DEC_LAYERS: 10  # 9 decoder layers, add one for the loss on learnable query
+    DEC_LAYERS: 10 # 9 decoder layers, add one for the loss on learnable query
     TOP_GROUNDING_LAYERS: 10
     TOP_CAPTION_LAYERS: 10
     TOP_SPATIAL_LAYERS: 10
@@ -170,18 +171,18 @@ STROKE_SAMPLER:
   DILATION: 3
   CIRCLE:
     NUM_STROKES: 5
-    STROKE_PRESET: ['object_like', 'object_like_middle', 'object_like_small']
+    STROKE_PRESET: ["object_like", "object_like_middle", "object_like_small"]
     STROKE_PROB: [0.33, 0.33, 0.33]
   SCRIBBLE:
     NUM_STROKES: 5
-    STROKE_PRESET: ['rand_curve', 'rand_curve_small']
+    STROKE_PRESET: ["rand_curve", "rand_curve_small"]
     STROKE_PROB: [0.5, 0.5]
   POINT:
     NUM_POINTS: 20
   POLYGON:
     MAX_POINTS: 9
   EVAL:
-    MODE: 'best' # best/random/best_random
+    MODE: "best" # best/random/best_random
     NEGATIVE: False
     MAX_ITER: 20
     IOU_ITER: 1
@@ -190,19 +191,19 @@ STROKE_SAMPLER:
 # Multi-modal Architecture, order matters
 ATTENTION_ARCH:
   VARIABLE:
-    queries: ['object', 'grounding', 'spatial']
-    tokens: ['grounding', 'spatial']
-    memories: ['spatial']
+    queries: ["object", "grounding", "spatial"]
+    tokens: ["grounding", "spatial"]
+    memories: ["spatial"]
   SELF_ATTENTION:
     queries:
-      object: ['queries_object']
-      grounding: ['queries_grounding', 'tokens_grounding']
-      spatial: ['queries_spatial', 'tokens_spatial', 'memories_spatial']
+      object: ["queries_object"]
+      grounding: ["queries_grounding", "tokens_grounding"]
+      spatial: ["queries_spatial", "tokens_spatial", "memories_spatial"]
     tokens:
-      grounding: ['queries_grounding', 'tokens_grounding']
-      spatial: ['tokens_spatial']
+      grounding: ["queries_grounding", "tokens_grounding"]
+      spatial: ["tokens_spatial"]
     memories:
-      spatial: ['memories_spatial']
+      spatial: ["memories_spatial"]
   CROSS_ATTENTION:
     queries:
       object: True
@@ -213,18 +214,18 @@ ATTENTION_ARCH:
     tokens:
       grounding: False
       spatial: False
-  MASKING: ['tokens_spatial', 'tokens_grounding']
+  MASKING: ["tokens_spatial", "tokens_grounding"]
   DUPLICATION:
     queries:
-      grounding: 'queries_object'
-      spatial: 'queries_object'
+      grounding: "queries_object"
+      spatial: "queries_object"
   SPATIAL_MEMORIES: 32
   QUERY_NUMBER: 3
 
 DATASETS:
-  TRAIN: ["coco_2017_train_panoptic_filtrefgumdval_with_sem_seg_caption_grounding_lvis",]
+  TRAIN: ["coco_2017_train_panoptic_filtrefgumdval_with_sem_seg_caption_grounding_lvis"]
   # TRAIN: ["coco_2017_train_panoptic_with_sem_seg_caption_grounding",]
-  TEST: ["coco_2017_val_panoptic_with_sem_seg", "pascalvoc_val_Point", "refcocog_val_umd"]  # to evaluate instance and semantic performance as well
+  TEST: ["coco_2017_val_panoptic_with_sem_seg", "pascalvoc_val_Point", "refcocog_val_umd"] # to evaluate instance and semantic performance as well
   # TEST: ["pascalvoc_val_Point"] # [pascalvoc, openimage600, ade600, davis, cocomini], [Point, Scribble, Polygon, Circle, Box]
   # TEST: ["cocomini_val_Point", "cocomini_val_Circle", "cocomini_val_Scribble", "cocomini_val_Polygon", "cocomini_val_Box"] # [pascalvoc, openimage600, ade600, davis, cocomini], [Point, Scribble, Polygon, Circle, Box]
   # TEST: ["ade600_val_Point", "ade600_val_Circle", "ade600_val_Scribble", "ade600_val_Polygon", "ade600_val_Box"] # [pascalvoc, openimage600, ade600, davis, cocomini], [Point, Scribble, Polygon, Circle, Box]
@@ -246,10 +247,10 @@ TRAIN:
 TEST:
   DETECTIONS_PER_IMAGE: 100
   NAME: coco_eval
-  IOU_TYPE: ['bbox', 'segm']
+  IOU_TYPE: ["bbox", "segm"]
   USE_MULTISCALE: false
   BATCH_SIZE_TOTAL: 8
-  MODEL_FILE: ''
+  MODEL_FILE: ""
   AUG:
     ENABLED: False
 
@@ -264,7 +265,7 @@ COCO:
   INPUT:
     MIN_SIZE_TRAIN: 800
     MAX_SIZE_TRAIN: 1333
-    MIN_SIZE_TRAIN_SAMPLING: 'choice'
+    MIN_SIZE_TRAIN_SAMPLING: "choice"
     MIN_SIZE_TEST: 800
     MAX_SIZE_TEST: 1333
     IMAGE_SIZE: 1024
@@ -280,7 +281,7 @@ COCO:
     CROP:
       ENABLED: True
   DATASET:
-    DATASET: 'coco'
+    DATASET: "coco"
 
 # Validation dataset
 ADE20K:
@@ -297,11 +298,11 @@ ADE20K:
       SIZE: (640, 640)
       SINGLE_CATEGORY_MAX_AREA: 1.0
     COLOR_AUG_SSD: True
-    SIZE_DIVISIBILITY: 640  # used in dataset mapper
+    SIZE_DIVISIBILITY: 640 # used in dataset mapper
     DATASET_MAPPER_NAME: "mask_former_panoptic"
     FORMAT: "RGB"
   DATASET:
-    DATASET: 'ade'
+    DATASET: "ade"
 
 SBD:
   INPUT:

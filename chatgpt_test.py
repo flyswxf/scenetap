@@ -19,7 +19,7 @@ from utils.utils import is_correct_answer
 class TypoDataset(Dataset):
     def __init__(self, question_path):
         # Question file
-        with open(question_path, 'r') as f:
+        with open(question_path, "r") as f:
             self.questions = json.load(f)
 
     def __getitem__(self, index):
@@ -32,16 +32,26 @@ class TypoDataset(Dataset):
 
 def create_data_loader(questions, batch_size=1, num_workers=0):
     dataset = TypoDataset(questions)
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, num_workers=num_workers
+    )
     return data_loader
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="gpt-4o", help="Model name: gpt-4o")
-    parser.add_argument("--dataset", type=str, default="typo_base_complex",
-                        help="Dataset name: typo_base_complex, typo_base_color, vqav2_val2014")
-    parser.add_argument("--attack", type=str, default="SceneTAP", help="Attack type: SceneTAP")
+    parser.add_argument(
+        "--model", type=str, default="gpt-4o", help="Model name: gpt-4o"
+    )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default="typo_base_complex",
+        help="Dataset name: typo_base_complex, typo_base_color, vqav2_val2014",
+    )
+    parser.add_argument(
+        "--attack", type=str, default="SceneTAP", help="Attack type: SceneTAP"
+    )
     parser.add_argument("--image-folder", type=str, default="")
     parser.add_argument("--question-file", type=str, default="tables/question.jsonl")
     parser.add_argument("--log_dir", type=str, default="./log")
@@ -50,10 +60,18 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0)
     parser.add_argument("--max_tokens", type=int, default=4095)
     parser.add_argument("--top_p", type=float, default=0)
+    parser.add_argument("--base-url", type=str, default=None)
+    parser.add_argument("--api-key", type=str, default=None)
 
     # som
     parser.add_argument("--slider", type=float, default=2)
     parser.add_argument("--filter", type=float, default=None)
+    parser.add_argument("--planner-model", type=str, default="gpt-4o-2024-08-06")
+    parser.add_argument("--planner-base-url", type=str, default=None)
+    parser.add_argument("--planner-api-key", type=str, default=None)
+    parser.add_argument("--planner-temperature", type=float, default=0.2)
+    parser.add_argument("--planner-max_tokens", type=int, default=4095)
+    parser.add_argument("--planner-top_p", type=float, default=0.1)
 
     # seed
     parser.add_argument("--seed", type=int, default=42)
@@ -68,22 +86,24 @@ if __name__ == "__main__":
     # logger
     args.log_dir = os.path.join(args.log_dir, args.model, args.dataset, args.attack)
     if args.attack == "SceneTAP":
-        args.log_dir = os.path.join(args.log_dir, f"slider_{args.slider}", f"filter_{args.filter}")
+        args.log_dir = os.path.join(
+            args.log_dir, f"slider_{args.slider}", f"filter_{args.filter}"
+        )
 
     args.log_dir = os.path.join(args.log_dir, f"seed_{args.seed}")
     os.makedirs(os.path.dirname(os.path.join(args.log_dir, "log.txt")), exist_ok=True)
-    logger = logging.getLogger('test_logger')
+    logger = logging.getLogger("test_logger")
     logger.setLevel(logging.DEBUG)
     log_path = os.path.join(args.log_dir, "log.txt")
-    test_log = logging.FileHandler(f'{log_path}', 'a', encoding='utf-8')
+    test_log = logging.FileHandler(f"{log_path}", "a", encoding="utf-8")
     test_log.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('')
+    formatter = logging.Formatter("")
     test_log.setFormatter(formatter)
     logger.addHandler(test_log)
 
     KZT = logging.StreamHandler()
     KZT.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('')
+    formatter = logging.Formatter("")
     KZT.setFormatter(formatter)
     logger.addHandler(KZT)
 
@@ -109,11 +129,25 @@ if __name__ == "__main__":
     # Attack planner
     if args.attack == "SceneTAP":
         som_base_path = "./som_images"
-        som_image_folder = os.path.join(som_base_path, args.dataset, f"slider_{args.slider}", f"seed_{args.seed}", f"filter_{args.filter}")
-        typo_attack_planner = TypoAttackPlanner(som_image_folder)
+        som_image_folder = os.path.join(
+            som_base_path,
+            args.dataset,
+            f"slider_{args.slider}",
+            f"seed_{args.seed}",
+            f"filter_{args.filter}",
+        )
+        typo_attack_planner = TypoAttackPlanner(
+            som_image_folder=som_image_folder,
+            temperature=args.planner_temperature,
+            max_tokens=args.planner_max_tokens,
+            top_p=args.planner_top_p,
+            planner_model=args.planner_model,
+            planner_api_key=args.planner_api_key,
+            planner_base_url=args.planner_base_url,
+        )
 
     # Load the questions
-    with open(args.question_file, 'r') as f:
+    with open(args.question_file, "r") as f:
         questions = json.load(f)
 
     ans_file_list = []
@@ -122,8 +156,12 @@ if __name__ == "__main__":
     for i, data in enumerate(questions):
         question_id = data["question_id"]
         image_name = data["image"]
-        if ("vqav2" in args.dataset or "LingoQA" in args.dataset) and args.attack != "no_attack":
-            image_name_save = f"{image_name.split('.')[0]}_{question_id}.{image_name.split('.')[1]}"
+        if (
+            "vqav2" in args.dataset or "LingoQA" in args.dataset
+        ) and args.attack != "no_attack":
+            image_name_save = (
+                f"{image_name.split('.')[0]}_{question_id}.{image_name.split('.')[1]}"
+            )
             if args.attack != "SceneTAP":
                 image_name = f"{image_name.split('.')[0]}_{question_id}.{image_name.split('.')[1]}"
         else:
@@ -134,16 +172,21 @@ if __name__ == "__main__":
         correct_answer = data["answer"]
 
         if args.attack == "SceneTAP":
-            images, seg_image, plan_detail_origin, plan_detail = typo_attack_planner.attack(
-                image_path, question, correct_answer)
+            images, seg_image, plan_detail_origin, plan_detail = (
+                typo_attack_planner.attack(image_path, question, correct_answer)
+            )
             image = images[0]
 
-
             image.save(os.path.join(image_save_dir, f"{image_name_save}"))
-            seg_image.save(os.path.join(image_save_dir, f"{image_name_save.replace('.jpg', '_seg.jpg')}"))
+            seg_image.save(
+                os.path.join(
+                    image_save_dir, f"{image_name_save.replace('.jpg', '_seg.jpg')}"
+                )
+            )
             # diffusion save path
-            image_save_dir_diffusion = os.path.join(args.log_dir, "diffusion",
-                                                    f"{image_name_save.replace('.jpg', '')}")
+            image_save_dir_diffusion = os.path.join(
+                args.log_dir, "diffusion", f"{image_name_save.replace('.jpg', '')}"
+            )
             os.makedirs(image_save_dir_diffusion, exist_ok=True)
             for k, img in enumerate(images):
                 img.save(os.path.join(image_save_dir_diffusion, f"{k}.jpg"))
@@ -152,55 +195,56 @@ if __name__ == "__main__":
             images = [image]
 
         # Get the answer
-        output_list = []
-        judge_list = []
-        for image in images:
-            base64_image = pil_to_base64(image)
-            completion_request = CompletionRequest(model=args.model, temperature=args.temperature,
-                                                   max_tokens=args.max_tokens, top_p=args.top_p)
-            completion_request.add_user_message_test(text=question, base64_image=[base64_image], image_first=True, detail="auto")
-            completion = completion_request.get_completion_payload()
-            answer = completion.choices[0].message.content
+    #     output_list = []
+    #     judge_list = []
+    #     for image in images:
+    #         base64_image = pil_to_base64(image)
+    #         completion_request = CompletionRequest(model=args.model, temperature=args.temperature,
+    #                                                max_tokens=args.max_tokens, top_p=args.top_p,
+    #                                                api_key=args.api_key, base_url=args.base_url)
+    #         completion_request.add_user_message_test(text=question, base64_image=[base64_image], image_first=True, detail="auto")
+    #         completion = completion_request.get_completion_payload()
+    #         answer = completion.choices[0].message.content
 
-            answer = answer.lower()
-            output_list.append(answer)
-            judge_list.append(is_correct_answer(answer, correct_answer, question, args.dataset, lingo_judge=lingo_judge))
+    #         answer = answer.lower()
+    #         output_list.append(answer)
+    #         judge_list.append(is_correct_answer(answer, correct_answer, question, args.dataset, lingo_judge=lingo_judge))
 
-        # Save the answer
-        if not(False in judge_list):
-            correct += 1
-            log_data = {"question_id": question_id,
-                        "image": data["image"],
-                        "text": question,
-                        "outputs": output_list,
-                        "answer": correct_answer,
-                        "plan_detail_origin": format_instance_json(
-                            plan_detail_origin) if args.attack == "SceneTAP" else None,
-                        "plan_detail": format_instance_json(plan_detail) if args.attack == "SceneTAP" else None,
-                        "judge_list": judge_list,
-                        "is_correct": True
-                        }
-            ans_file_list.append(log_data)
-            logger.info(log_data)
+    #     # Save the answer
+    #     if not(False in judge_list):
+    #         correct += 1
+    #         log_data = {"question_id": question_id,
+    #                     "image": data["image"],
+    #                     "text": question,
+    #                     "outputs": output_list,
+    #                     "answer": correct_answer,
+    #                     "plan_detail_origin": format_instance_json(
+    #                         plan_detail_origin) if args.attack == "SceneTAP" else None,
+    #                     "plan_detail": format_instance_json(plan_detail) if args.attack == "SceneTAP" else None,
+    #                     "judge_list": judge_list,
+    #                     "is_correct": True
+    #                     }
+    #         ans_file_list.append(log_data)
+    #         logger.info(log_data)
 
-        else:
-            log_data = {"question_id": question_id,
-                        "image": data["image"],
-                        "text": question,
-                        "outputs": output_list,
-                        "answer": correct_answer,
-                        "plan_detail_origin": format_instance_json(
-                            plan_detail_origin) if args.attack == "SceneTAP" else None,
-                        "plan_detail": format_instance_json(plan_detail) if args.attack == "SceneTAP" else None,
-                        "judge_list": judge_list,
-                        "is_correct": False
-                        }
-            ans_file_list.append(log_data)
-            logger.info(log_data)
-        total += 1
+    #     else:
+    #         log_data = {"question_id": question_id,
+    #                     "image": data["image"],
+    #                     "text": question,
+    #                     "outputs": output_list,
+    #                     "answer": correct_answer,
+    #                     "plan_detail_origin": format_instance_json(
+    #                         plan_detail_origin) if args.attack == "SceneTAP" else None,
+    #                     "plan_detail": format_instance_json(plan_detail) if args.attack == "SceneTAP" else None,
+    #                     "judge_list": judge_list,
+    #                     "is_correct": False
+    #                     }
+    #         ans_file_list.append(log_data)
+    #         logger.info(log_data)
+    #     total += 1
 
-    ans_file.write(json.dumps(ans_file_list, indent=2))
-    ans_file.close()
-    logger.info(f"Correct: {correct}/{total}")
-    logger.info(f"Accuracy: {correct / total}")
-    logger.info(f"ASR: {(total - correct) / total}")
+    # ans_file.write(json.dumps(ans_file_list, indent=2))
+    # ans_file.close()
+    # logger.info(f"Correct: {correct}/{total}")
+    # logger.info(f"Accuracy: {correct / total}")
+    # logger.info(f"ASR: {(total - correct) / total}")

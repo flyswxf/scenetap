@@ -192,7 +192,7 @@ class CompletionRequest:
         )
 
     def _json_schema_fallback(self):
-        schema = self.response_format.model_json_schema()
+        schema = self.response_format.schema()
         fallback_messages = list(self.message_handler.get_messages())
         fallback_messages.append(
             {
@@ -213,7 +213,7 @@ class CompletionRequest:
         )
         raw_content = completion.choices[0].message.content
         json_content = self._extract_json_object(raw_content)
-        parsed = self.response_format.model_validate_json(json_content)
+        parsed = self.response_format.parse_raw(json_content)
         return self._build_wrapped_response(parsed, raw_content)
 
     def set_response_format(self, response_format):

@@ -159,14 +159,14 @@ class TypoAttackPlanner:
     @staticmethod
     def _plan_to_dict(plan_detail):
         if isinstance(plan_detail, BaseModel):
-            return plan_detail.model_dump()
+            return plan_detail.dict()
         return plan_detail
 
     @staticmethod
     def _plan_from_dict(plan_detail):
         if isinstance(plan_detail, BaseModel):
             return plan_detail
-        return PlanSom.model_validate(plan_detail)
+        return PlanSom.parse_obj(plan_detail)
 
     def _request_attack_plan(self, image, seg_image, question, correct_answer):
         base64_image = pil_to_base64(image)
@@ -354,6 +354,6 @@ class TypoAttackPlanner:
         return (
             diffusion_images,
             seg_image,
-            PlanSom.model_validate(plan_record["plan_detail_origin"]),
-            PlanSom.model_validate(plan_record["plan_detail"]),
+            PlanSom.parse_obj(plan_record["plan_detail_origin"]),
+            PlanSom.parse_obj(plan_record["plan_detail"]),
         )

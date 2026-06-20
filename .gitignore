@@ -58,3 +58,4 @@ clip-vit-base-patch32
 # 数据集文件
 som_images
 tables
+tmp.json

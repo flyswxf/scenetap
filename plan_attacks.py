@@ -7,10 +7,6 @@ from pytorch_lightning import seed_everything
 from utils.typo_attack_planner import TypoAttackPlanner
 
 
-def build_som_image_folder(base_path, dataset, slider, seed, filter_value):
-    return os.path.join(base_path, dataset, f"slider_{slider}", f"seed_{seed}", f"filter_{filter_value}")
-
-
 def build_image_save_name(dataset, image_name, question_id):
     if "vqav2" in dataset or "LingoQA" in dataset:
         stem, ext = os.path.splitext(image_name)
@@ -42,13 +38,7 @@ if __name__ == "__main__":
 
     som_image_folder = args.som_image_folder
     if som_image_folder is None:
-        som_image_folder = build_som_image_folder(
-            base_path=args.som_base_path,
-            dataset=args.dataset,
-            slider=args.slider,
-            seed=args.seed,
-            filter_value=args.filter,
-        )
+        raise ValueError("som_image_folder must be provided")
 
     os.makedirs(os.path.dirname(args.output_file), exist_ok=True)
 
@@ -106,6 +96,7 @@ if __name__ == "__main__":
             },
             "records": records,
         }
+        # 每次都写入文件, 以确保最新结果被保存
         with open(args.output_file, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)
 

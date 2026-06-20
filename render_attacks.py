@@ -8,12 +8,6 @@ from pytorch_lightning import seed_everything
 from utils.typo_attack_planner import TypoAttackPlanner
 
 
-def default_render_dir(base_dir, dataset, slider, filter_value, seed):
-    render_dir = os.path.join(base_dir, dataset, f"slider_{slider}", f"filter_{filter_value}", f"seed_{seed}")
-    os.makedirs(render_dir, exist_ok=True)
-    return render_dir
-
-
 def seg_image_name(image_name):
     stem, ext = os.path.splitext(image_name)
     return f"{stem}_seg{ext}"
@@ -42,13 +36,7 @@ if __name__ == "__main__":
 
     render_dir = args.render_dir
     if render_dir is None:
-        render_dir = default_render_dir(
-            base_dir=args.render_base_dir,
-            dataset=meta["dataset"],
-            slider=meta["slider"],
-            filter_value=meta["filter"],
-            seed=meta["seed"],
-        )
+        raise ValueError("render_dir must be provided")
 
     image_save_dir = os.path.join(render_dir, "images")
     diffusion_dir = os.path.join(render_dir, "diffusion")
@@ -58,6 +46,7 @@ if __name__ == "__main__":
 
     existing_records = []
     completed_question_ids = set()
+    # 启用resume才会从output_file中读取已渲染的记录, 否则默认重新渲染
     if args.resume and os.path.exists(output_file):
         with open(output_file, "r", encoding="utf-8") as f:
             existing_payload = json.load(f)
@@ -114,6 +103,7 @@ if __name__ == "__main__":
             },
             "records": rendered_records,
         }
+        # 每次都写入文件, 以确保最新结果被保存
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)
 
